@@ -125,7 +125,33 @@ namespace Operators
 			Assert::IsFalse(h1 > NullHandle);
 		}
 
-		// TODO - See if we can prevent user from assigning output of non-const ptr() to a T*
+		TEST_METHOD(IfCreate)
+		{
+			if (WinHandle<handle_type, NullHandle> h1{ NullHandle, nullptr })
+			{
+				Assert::Fail();
+			}
 
+			if (WinHandle<handle_type, NullHandle> h2{ Handle1, nullptr })
+			{
+				Assert::IsTrue(h2.valid());
+			}
+		}
+
+		TEST_METHOD(IfAssign)
+		{
+			WinHandle<handle_type, NullHandle> h1{ NullHandle, nullptr };
+			if (WinHandle<handle_type, NullHandle> h = h1)
+			{
+				Assert::Fail();
+			}
+
+
+			WinHandle<handle_type, NullHandle> h2{ Handle1, nullptr };
+			if (WinHandle<handle_type, NullHandle> h = h2)
+			{
+				Assert::IsTrue(h.valid());
+			}
+		}
 	};
 }
