@@ -79,17 +79,27 @@ public:
 	~WinHandle() noexcept = default;
 
 	// Comparison operators
-	bool operator!() const noexcept;
 	bool operator==(const WinHandle& other) const noexcept;
-	bool operator!=(const WinHandle& other) const noexcept;
+#if __cpp_impl_three_way_comparison
+	std::strong_ordering operator<=>(const WinHandle& other) noexcept;
+#else
+	bool operator!() const noexcept;
 	bool operator <(const WinHandle& other) const noexcept;
+#endif __cpp_impl_three_way_comparison
+
+	bool operator==(const Type& handle) const noexcept;
+	bool operator!=(const Type& handle) const noexcept;
+	bool operator <(const Type& handle) const noexcept;
+	bool operator >(const Type& handle) const noexcept;
 
 	// Assignment operators
 	WinHandle& operator=(Type handle) noexcept;
 
 	// Conversion operators
-	explicit operator bool() const noexcept;
-	operator Type() const noexcept;
+
+	// Safe Bool Idiom
+	using bool_type = void (WinHandle::*)() const noexcept;
+	operator bool_type() const noexcept;
 
 	// Smart pointer operations
 	void swap(WinHandle& other) noexcept;
@@ -105,6 +115,9 @@ public:
 	ReturnType close() noexcept; // Close the handle using the assigned deleter
 
 private:
+	// Safe Bool Idiom
+	void this_type_does_not_support_comparisons() const noexcept {}
+
 	class impl
 	{
 	public:
@@ -122,12 +135,6 @@ private:
 
 		// Destructor
 		~impl() noexcept;
-
-		// Comparison operators
-		bool operator==(const impl& other) const noexcept;
-		bool operator!=(const impl& other) const noexcept;
-		bool operator==(Type v) const noexcept;
-		bool operator!=(Type v) const noexcept;
 
 		// Assignment
 		ReturnType assign(Type v) noexcept;
@@ -170,6 +177,30 @@ private:
 
 	std::shared_ptr<impl> m_impl;
 };
+
+template<typename Type, Type NullValue, typename ReturnType>
+bool operator==(const Type& lhs, const WinHandle<Type, NullValue, ReturnType>& rhs)
+{
+	return lhs == rhs.get();
+}
+
+template<typename Type, Type NullValue, typename ReturnType>
+bool operator!=(const Type& lhs, const WinHandle<Type, NullValue, ReturnType>& rhs)
+{
+	return lhs != rhs.get();
+}
+
+template<typename Type, Type NullValue, typename ReturnType>
+bool operator <(const Type& lhs, const WinHandle<Type, NullValue, ReturnType>& rhs)
+{
+	return lhs < rhs.get();
+}
+
+template<typename Type, Type NullValue, typename ReturnType>
+bool operator >(const Type& lhs, const WinHandle<Type, NullValue, ReturnType>& rhs)
+{
+	return lhs > rhs.get();
+}
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -282,27 +313,57 @@ WinHandle<Type, NullValue, ReturnType>& WinHandle<Type, NullValue, ReturnType>::
 // Comparison operators
 
 template<typename Type, Type NullValue, typename ReturnType>
+bool WinHandle<Type, NullValue, ReturnType>::operator==(const WinHandle& other) const noexcept
+{
+	return m_impl == other.m_impl;
+}
+
+#if __cpp_impl_three_way_comparison
+
+template<typename Type, Type NullValue, typename ReturnType>
+std::strong_ordering WinHandle<Type, NullValue, ReturnType>::operator<=>(const WinHandle& other) noexcept
+{
+	return m_impl <=> other.m_impl;
+}
+
+#else
+
+template<typename Type, Type NullValue, typename ReturnType>
 bool WinHandle<Type, NullValue, ReturnType>::operator!() const noexcept
 {
 	return !valid();
 }
 
 template<typename Type, Type NullValue, typename ReturnType>
-bool WinHandle<Type, NullValue, ReturnType>::operator==(const WinHandle& other) const noexcept
-{
-	return m_impl == other.m_impl;
-}
-
-template<typename Type, Type NullValue, typename ReturnType>
-bool WinHandle<Type, NullValue, ReturnType>::operator!=(const WinHandle& other) const noexcept
-{
-	return m_impl != other.m_impl;
-}
-
-template<typename Type, Type NullValue, typename ReturnType>
 bool WinHandle<Type, NullValue, ReturnType>::operator <(const WinHandle& other) const noexcept
 {
 	return m_impl < other.m_impl;
+}
+
+#endif __cpp_impl_three_way_comparison
+
+template<typename Type, Type NullValue, typename ReturnType>
+bool WinHandle<Type, NullValue, ReturnType>::operator==(const Type& handle) const noexcept
+{
+	return get() == handle;
+}
+
+template<typename Type, Type NullValue, typename ReturnType>
+bool WinHandle<Type, NullValue, ReturnType>::operator!=(const Type& handle) const noexcept
+{
+	return get() != handle;
+}
+
+template<typename Type, Type NullValue, typename ReturnType>
+bool WinHandle<Type, NullValue, ReturnType>::operator<(const Type& handle) const noexcept
+{
+	return get() < handle;
+}
+
+template<typename Type, Type NullValue, typename ReturnType>
+bool WinHandle<Type, NullValue, ReturnType>::operator>(const Type& handle) const noexcept
+{
+	return get() > handle;
 }
 
 // Assignment operators
@@ -317,15 +378,9 @@ WinHandle<Type, NullValue, ReturnType>& WinHandle<Type, NullValue, ReturnType>::
 // Conversion operators
 
 template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>::operator bool() const noexcept
+WinHandle<Type, NullValue, ReturnType>::operator bool_type() const noexcept
 {
-	return m_impl->get() != NullValue;
-}
-
-template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>::operator Type() const noexcept
-{
-	return get();
+	return valid() ? &WinHandle::this_type_does_not_support_comparisons : nullptr;
 }
 
 // Smart pointer operations
@@ -376,7 +431,7 @@ const Type* WinHandle<Type, NullValue, ReturnType>::ptr() const noexcept
 }
 
 template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>::MutableHandle WinHandle<Type, NullValue, ReturnType>::ptr() noexcept
+typename WinHandle<Type, NullValue, ReturnType>::MutableHandle WinHandle<Type, NullValue, ReturnType>::ptr() noexcept
 {
 	return MutableHandle(*this);
 }
@@ -412,32 +467,6 @@ template<typename Type, Type NullValue, typename ReturnType>
 WinHandle<Type, NullValue, ReturnType>::impl::~impl() noexcept
 {
 	destroy();
-}
-
-// Comparison operators
-
-template<typename Type, Type NullValue, typename ReturnType>
-bool WinHandle<Type, NullValue, ReturnType>::impl::operator==(const impl& other) const noexcept
-{
-	return m_handle == other.m_handle;
-}
-
-template<typename Type, Type NullValue, typename ReturnType>
-bool WinHandle<Type, NullValue, ReturnType>::impl::operator!=(const impl& other) const noexcept
-{
-	return !operator==(other);
-}
-
-template<typename Type, Type NullValue, typename ReturnType>
-bool WinHandle<Type, NullValue, ReturnType>::impl::operator==(Type v) const noexcept
-{
-	return m_handle == v;
-}
-
-template<typename Type, Type NullValue, typename ReturnType>
-bool WinHandle<Type, NullValue, ReturnType>::impl::operator!=(Type v) const noexcept
-{
-	return !operator==(v);
 }
 
 // Assignment

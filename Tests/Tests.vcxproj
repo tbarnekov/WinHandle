@@ -161,6 +161,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Assignment.cpp" />
+    <ClCompile Include="Operators.cpp" />
     <ClCompile Include="Construction.cpp" />
     <ClCompile Include="HandleOps.cpp" />
     <ClCompile Include="Ownership.cpp" />
