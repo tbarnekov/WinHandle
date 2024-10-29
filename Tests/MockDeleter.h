@@ -1,14 +1,11 @@
 #pragma once
 #include "pch.h"
 #include "CppUnitTest.h"
-#include <algorithm>
-#include <functional>
-#include <optional>
-#include <stack>
+#include <vector>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
-template<typename Type, typename RT = BOOL>
+template<typename T, typename RT = BOOL>
 class MockDeleter
 {
 public:
@@ -18,12 +15,12 @@ public:
 	{
 	}
 
-	explicit MockDeleter(const std::vector<Type>& expect)
+	explicit MockDeleter(const std::vector<T>& expect)
 		: m_expect{ expect }
 	{
 	}
 
-	MockDeleter(const std::vector<Type>& expect, bool assert)
+	MockDeleter(const std::vector<T>& expect, bool assert)
 		: m_expect{ expect }, m_assert{ assert }
 	{
 	}
@@ -39,7 +36,7 @@ public:
 		}
 	}
 
-	RT __stdcall Delete(Type h)
+	RT __stdcall Delete(T h)
 	{
 		// Fail if deleter is called twice
 		Assert::IsFalse(m_index >= m_expect.size() );
@@ -61,5 +58,5 @@ public:
 private:
 	bool m_assert{ true }; // Assert if not called unless specifically disabled
 	size_t m_index{ 0 };
-	std::vector<Type> m_expect; // Vector of expected values
+	std::vector<T> m_expect; // Vector of expected values
 };
