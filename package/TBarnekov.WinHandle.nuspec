@@ -2,11 +2,11 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
 	<metadata>
 		<id>TBarnekov.WinHandle</id>
-		<version>1.1.0</version>
+		<version>1.1.1</version>
 		<title>WinHandle</title>
 		<authors>Thomas Gottschalk Barnekov</authors>
 		<copyright>2024 Thomas Gottschalk Barnekov</copyright>
-		<tags>native;Windows;C++20;handle;wrapper;header-only</tags>
+		<tags>native;Windows;C++20;C++17;handle;wrapper;header-only</tags>
 		<description>WinHandle provides a simple and easy to use wrapper around native Windows handles.</description>
 		<projectUrl>https://github.com/tbarnekov/WinHandle</projectUrl>
 		<repository type="git" url="https://github.com/tbarnekov/WinHandle.git" branch="main" />
