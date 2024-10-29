@@ -92,8 +92,10 @@ namespace Construction
 			WinHandle<handle_type> h42(HandleValue, &fp0);
 			WinHandle<handle_type> h43(&fp1, static_cast<param1_type>(Param1)); h43 = HandleValue;
 			WinHandle<handle_type> h44(HandleValue, &fp1, static_cast<param1_type>(Param1));
+#if __cplusplus >= 202002L // C++20
 			WinHandle<handle_type> h45(&fp2, static_cast<param1_type>(Param1), static_cast<param2_type>(Param2)); h45 = HandleValue;
 			WinHandle<handle_type> h46(HandleValue, &fp2, static_cast<param1_type>(Param1), static_cast<param2_type>(Param2));
+#endif __cplusplus >= 202002L // C++20
 		}
 
 		TEST_METHOD(MemberFunctionPointer)
@@ -104,8 +106,10 @@ namespace Construction
 			WinHandle<handle_type> h52(HandleValue, &Class::mfp0, this);
 			WinHandle<handle_type> h53(&Class::mfp1, this, static_cast<param1_type>(Param1)); h53 = HandleValue;
 			WinHandle<handle_type> h54(HandleValue, &Class::mfp1, this, static_cast<param1_type>(Param1));
+#if __cplusplus >= 202002L // C++20
 			WinHandle<handle_type> h55(&Class::mfp2, this, static_cast<param1_type>(Param1), static_cast<param2_type>(Param2)); h55 = HandleValue;
 			WinHandle<handle_type> h56(HandleValue, &Class::mfp2, this, static_cast<param1_type>(Param1), static_cast<param2_type>(Param2));
+#endif __cplusplus >= 202002L // C++20
 		}
 
 		TEST_METHOD(CopyConstructor)
@@ -257,8 +261,10 @@ namespace Construction
 			WinHandle<handle_type> h42{ HandleValue, &fp0 };
 			WinHandle<handle_type> h43{ &fp1, static_cast<param1_type>(Param1) }; h43 = HandleValue;
 			WinHandle<handle_type> h44{ HandleValue, &fp1, static_cast<param1_type>(Param1) };
+#if __cplusplus >= 202002L // C++20
 			WinHandle<handle_type> h45{ &fp2, static_cast<param1_type>(Param1), static_cast<param2_type>(Param2) }; h45 = HandleValue;
 			WinHandle<handle_type> h46{ HandleValue, &fp2, static_cast<param1_type>(Param1), static_cast<param2_type>(Param2) };
+#endif __cplusplus >= 202002L // C++20
 		}
 
 		TEST_METHOD(MemberFunctionPointer)
@@ -269,8 +275,10 @@ namespace Construction
 			WinHandle<handle_type> h52{ HandleValue, &Class::mfp0, this };
 			WinHandle<handle_type> h53{ &Class::mfp1, this, static_cast<param1_type>(Param1) }; h53 = HandleValue;
 			WinHandle<handle_type> h54{ HandleValue, &Class::mfp1, this, static_cast<param1_type>(Param1) };
+#if __cplusplus >= 202002L // C++20
 			WinHandle<handle_type> h55{ &Class::mfp2, this, static_cast<param1_type>(Param1), static_cast<param2_type>(Param2) }; h55 = HandleValue;
 			WinHandle<handle_type> h56{ HandleValue, &Class::mfp2, this, static_cast<param1_type>(Param1), static_cast<param2_type>(Param2) };
+#endif __cplusplus >= 202002L // C++20
 		}
 
 		TEST_METHOD(CopyConstructor)
