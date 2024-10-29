@@ -27,105 +27,109 @@ SOFTWARE.
 #include <memory>
 
 
-template<typename Type, Type NullValue = static_cast<Type>(0), typename ReturnType = int>
+template<typename T, T NullValue = static_cast<T>(0), typename RT = int>
 class WinHandle
 {
 public:
+	using element_type = T;
+
 	class MutableHandle;
 
+#pragma region Constructors
 	// Constructors
 	WinHandle();
-	explicit WinHandle(Type handle, nullptr_t);
+	explicit WinHandle(T handle, nullptr_t);
 
 	// std::function
-	explicit WinHandle(std::function<ReturnType(Type)> deleter);
-	explicit WinHandle(Type handle, std::function<ReturnType(Type)> deleter);
+	explicit WinHandle(std::function<RT(T)> deleter);
+	explicit WinHandle(T handle, std::function<RT(T)> deleter);
 
 	// Function pointer
 	template<typename DType>
-	explicit WinHandle(ReturnType(__stdcall* deleter)(DType));
+	explicit WinHandle(RT(__stdcall* deleter)(DType));
 
 	template<typename DType, typename... Args>
-	explicit WinHandle(ReturnType(__stdcall* deleter)(DType, Args...), Args&&... args);
+	explicit WinHandle(RT(__stdcall* deleter)(DType, Args...), Args&&... args);
 
 	template<typename DType>
-	explicit WinHandle(Type handle, ReturnType(__stdcall* deleter)(DType));
+	explicit WinHandle(T handle, RT(__stdcall* deleter)(DType));
 
 	template<typename DType, typename... Args>
-	explicit WinHandle(Type handle, ReturnType(__stdcall* deleter)(DType, Args...), Args&&... args);
+	explicit WinHandle(T handle, RT(__stdcall* deleter)(DType, Args...), Args&&... args);
 
 	// Member function pointer
 	template<typename Class, typename DType>
-	explicit WinHandle(ReturnType(__stdcall Class::* deleter)(DType), Class* instance);
+	explicit WinHandle(RT(__stdcall Class::* deleter)(DType), Class* instance);
 
 	template<typename Class, typename DType, typename... Args>
-	explicit WinHandle(ReturnType(__stdcall Class::* deleter)(DType, Args...), Class* instance, Args&&... args);
+	explicit WinHandle(RT(__stdcall Class::* deleter)(DType, Args...), Class* instance, Args&&... args);
 
 	template<typename Class, typename DType>
-	explicit WinHandle(Type handle, ReturnType(__stdcall Class::* deleter)(DType), Class* instance);
+	explicit WinHandle(T handle, RT(__stdcall Class::* deleter)(DType), Class* instance);
 
 	template<typename Class, typename DType, typename... Args>
-	explicit WinHandle(Type handle, ReturnType(__stdcall Class::* deleter)(DType, Args...), Class* instance, Args&&... args);
+	explicit WinHandle(T handle, RT(__stdcall Class::* deleter)(DType, Args...), Class* instance, Args&&... args);
+#pragma endregion
 
+#pragma region Copy and move constructors
 	// Copy and move constructors
 	WinHandle(const WinHandle&) noexcept = default;
 	WinHandle(WinHandle&& move) noexcept;
+#pragma endregion
 
+#pragma region Copy and move operators
 	// Copy and move operators
 	WinHandle& operator =(const WinHandle&) noexcept = default;
 	WinHandle& operator =(WinHandle&& move) noexcept;
+#pragma endregion
 
+#pragma region Destructor
 	// Destructor
 	~WinHandle() noexcept = default;
+#pragma endregion
 
-	// Comparison operators
-	bool operator==(const WinHandle& other) const noexcept;
-#if __cpp_impl_three_way_comparison
-	std::strong_ordering operator<=>(const WinHandle& other) noexcept;
-#else
-	bool operator!() const noexcept;
-	bool operator <(const WinHandle& other) const noexcept;
-#endif __cpp_impl_three_way_comparison
-
-	bool operator==(const Type& handle) const noexcept;
-	bool operator!=(const Type& handle) const noexcept;
-	bool operator <(const Type& handle) const noexcept;
-	bool operator >(const Type& handle) const noexcept;
-
+#pragma region Assignment operators
 	// Assignment operators
-	WinHandle& operator=(Type handle) noexcept;
+	WinHandle& operator=(const T& handle) noexcept;
+#pragma endregion
 
+#pragma region Conversion operators
 	// Conversion operators
-
 	// Safe Bool Idiom
 	using bool_type = void (WinHandle::*)() const noexcept;
 	operator bool_type() const noexcept;
+#pragma endregion
 
+#pragma region Smart pointer operations
 	// Smart pointer operations
 	void swap(WinHandle& other) noexcept;
 	void reset();
-	void reset(Type handle);
+	void reset(T handle);
 	long use_count() const noexcept;
+#pragma endregion
 
+#pragma region Handle operations
 	// Handle operations
 	bool valid() const noexcept;
-	Type get() const noexcept;
-	const Type* ptr() const noexcept; // Returns a non-mutable pointer to the handle
+	T get() const noexcept;
+	const T* ptr() const noexcept; // Returns a non-mutable pointer to the handle
 	[[nodiscard]] MutableHandle ptr() noexcept; // Returns a mutable pointer to the handle
-	ReturnType close() noexcept; // Close the handle using the assigned deleter
+	RT close() noexcept; // Close the handle using the assigned deleter
+#pragma endregion
 
 private:
 	// Safe Bool Idiom
 	void this_type_does_not_support_comparisons() const noexcept {}
 
+#pragma region impl
 	class impl
 	{
 	public:
 		// Constructors
-		explicit impl(Type handle, nullptr_t) noexcept;
+		explicit impl(T handle, nullptr_t) noexcept;
 
 		// std::function
-		explicit impl(Type handle, std::function<ReturnType(Type)> deleter);
+		explicit impl(T handle, std::function<RT(T)> deleter);
 
 		// Copy and move
 		impl(const impl&) = delete;
@@ -137,20 +141,22 @@ private:
 		~impl() noexcept;
 
 		// Assignment
-		ReturnType assign(Type v) noexcept;
+		RT assign(T v) noexcept;
 
 		// Member access
-		Type get() const noexcept;
-		const Type* ptr() const noexcept;
-		std::function<ReturnType(Type)> deleter() const noexcept;
+		T get() const noexcept;
+		const T* ptr() const noexcept;
+		std::function<RT(T)> deleter() const noexcept;
 
 	private:
-		ReturnType destroy() noexcept;
+		RT destroy() noexcept;
 
-		Type m_handle{ NullValue };
-		std::function<ReturnType(Type)> m_deleter{ nullptr };
+		T m_handle{ NullValue };
+		std::function<RT(T)> m_deleter{ nullptr };
 	};
+#pragma endregion
 
+#pragma region MutableHandle
 	class MutableHandle
 	{
 	public:
@@ -168,313 +174,504 @@ private:
 		~MutableHandle() noexcept;
 
 		// Conversion operator
-		operator Type* () noexcept;
+		operator T* () noexcept;
 
 	private:
 		WinHandle& m_owner;
-		Type m_handle{ NullValue };
+		T m_handle{ NullValue };
 	};
+#pragma endregion
 
 	std::shared_ptr<impl> m_impl;
 };
 
-template<typename Type, Type NullValue, typename ReturnType>
-bool operator==(const Type& lhs, const WinHandle<Type, NullValue, ReturnType>& rhs)
+
+#pragma region Comparison operators
+
+#pragma region WinHandle comparison
+// Comparison operators
+template<typename T, T NullValue, typename RT, typename U>
+bool operator ==(const WinHandle<T, NullValue, RT>& lhs, const WinHandle<U, NullValue, RT>& rhs) noexcept
+{
+	return lhs.get() == rhs.get();
+}
+
+#if !__cpp_impl_three_way_comparison
+
+template<typename T, T NullValue, typename RT, typename U>
+bool operator !=(const WinHandle<T, NullValue, RT>& lhs, const WinHandle<U, NullValue, RT>& rhs) noexcept
+{
+	return lhs.get() != rhs.get();
+}
+
+template<typename T, T NullValue, typename RT, typename U>
+bool operator <(const WinHandle<T, NullValue, RT>& lhs, const WinHandle<U, NullValue, RT>& rhs) noexcept
+{
+	return lhs.get() < rhs.get();
+}
+
+template<typename T, T NullValue, typename RT, typename U>
+bool operator <=(const WinHandle<T, NullValue, RT>& lhs, const WinHandle<U, NullValue, RT>& rhs) noexcept
+{
+	return lhs.get() <= rhs.get();
+}
+
+template<typename T, T NullValue, typename RT, typename U>
+bool operator >(const WinHandle<T, NullValue, RT>& lhs, const WinHandle<U, NullValue, RT>& rhs)
+{
+	return lhs.get() > rhs.get();
+}
+
+template<typename T, T NullValue, typename RT, typename U>
+bool operator >=(const WinHandle<T, NullValue, RT>& lhs, const WinHandle<U, NullValue, RT>& rhs) noexcept
+{
+	return lhs.get() >= rhs.get();
+}
+
+#else !__cpp_impl_three_way_comparison
+
+template<typename T, T NullValue, typename RT, typename U>
+std::strong_ordering operator <=>(const WinHandle<T, NullValue, RT>& lhs, const WinHandle<U, NullValue, RT>& rhs) noexcept
+{
+	return std::compare_three_way{}(lhs.get(), rhs.get());
+}
+
+#endif !__cpp_impl_three_way_comparison
+
+#pragma endregion
+
+#pragma region Null comparison
+// Null comparison
+
+template<typename T, T NullValue, typename RT>
+bool operator ==(const WinHandle<T, NullValue, RT>& lhs, std::nullptr_t) noexcept
+{
+	return !lhs.valid();
+}
+
+template<typename T, T NullValue, typename RT>
+bool operator ==(std::nullptr_t, const WinHandle<T, NullValue, RT>& rhs) noexcept
+{
+	return !rhs.valid();
+}
+
+#if !__cpp_impl_three_way_comparison
+
+template<typename T, T NullValue, typename RT>
+bool operator !=(const WinHandle<T, NullValue, RT>& lhs, std::nullptr_t) noexcept
+{
+	return lhs.valid();
+}
+
+template<typename T, T NullValue, typename RT>
+bool operator !=(std::nullptr_t, const WinHandle<T, NullValue, RT>& rhs) noexcept
+{
+	return rhs.valid();
+}
+
+template<typename T, T NullValue, typename RT>
+bool operator <(const WinHandle<T, NullValue, RT>& lhs, std::nullptr_t) noexcept
+{
+	return std::less<T>()(lhs.get(), nullptr);
+}
+
+template<typename T, T NullValue, typename RT>
+bool operator <(std::nullptr_t, const WinHandle<T, NullValue, RT>& rhs) noexcept
+{
+	return std::less<T>()(nullptr, rhs.get());
+}
+
+template<typename T, T NullValue, typename RT>
+bool operator >(const WinHandle<T, NullValue, RT>& lhs, std::nullptr_t) noexcept
+{
+	return nullptr > lhs.get();
+}
+
+template<typename T, T NullValue, typename RT>
+bool operator >(std::nullptr_t, const WinHandle<T, NullValue, RT>& rhs) noexcept
+{
+	return rhs.get() > nullptr;
+}
+
+template<typename T, T NullValue, typename RT>
+bool operator <=(const WinHandle<T, NullValue, RT>& lhs, std::nullptr_t) noexcept
+{
+	return !(nullptr < lhs.get());
+}
+
+template<typename T, T NullValue, typename RT>
+bool operator <=(std::nullptr_t, const WinHandle<T, NullValue, RT>& rhs) noexcept
+{
+	return !(rhs.get() < nullptr);
+}
+
+template<typename T, T NullValue, typename RT>
+bool operator >=(const WinHandle<T, NullValue, RT>& lhs, std::nullptr_t) noexcept
+{
+	return !(lhs.get() < nullptr);
+}
+
+template<typename T, T NullValue, typename RT>
+bool operator >=(std::nullptr_t, const WinHandle<T, NullValue, RT>& rhs) noexcept
+{
+	return !(nullptr < rhs.get());
+}
+
+#else !__cpp_impl_three_way_comparison
+
+template<typename T, T NullValue, typename RT>
+bool operator <=>(const WinHandle<T, NullValue, RT>& lhs, std::nullptr_t) noexcept
+{
+	return std::compare_three_way{}(lhs.get(), NullValue);
+}
+
+#endif !__cpp_impl_three_way_comparison
+
+#pragma endregion
+
+#pragma region Handle comparison operators
+// Handle comparison operators
+
+template<typename T, T NullValue, typename RT>
+bool operator ==(const T& lhs, const WinHandle<T, NullValue, RT>& rhs) noexcept
 {
 	return lhs == rhs.get();
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
-bool operator!=(const Type& lhs, const WinHandle<Type, NullValue, ReturnType>& rhs)
+template<typename T, T NullValue, typename RT>
+bool operator ==(const WinHandle<T, NullValue, RT>& lhs, const T& rhs) noexcept
+{
+	return lhs.get() == rhs;
+}
+
+#if !__cpp_impl_three_way_comparison
+
+template<typename T, T NullValue, typename RT>
+bool operator !=(const T& lhs, const WinHandle<T, NullValue, RT>& rhs) noexcept
 {
 	return lhs != rhs.get();
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
-bool operator <(const Type& lhs, const WinHandle<Type, NullValue, ReturnType>& rhs)
+template<typename T, T NullValue, typename RT>
+bool operator !=(const WinHandle<T, NullValue, RT>& lhs, const T& rhs) noexcept
+{
+	return lhs.get() != rhs;
+}
+
+template<typename T, T NullValue, typename RT>
+bool operator <(const T& lhs, const WinHandle<T, NullValue, RT>& rhs) noexcept
 {
 	return lhs < rhs.get();
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
-bool operator >(const Type& lhs, const WinHandle<Type, NullValue, ReturnType>& rhs)
+template<typename T, T NullValue, typename RT>
+bool operator <(const WinHandle<T, NullValue, RT>& lhs, const T& rhs) noexcept
+{
+	return lhs.get() < rhs;
+}
+
+template<typename T, T NullValue, typename RT>
+bool operator <=(const T& lhs, const WinHandle<T, NullValue, RT>& rhs) noexcept
+{
+	return lhs <= rhs.get();
+}
+
+template<typename T, T NullValue, typename RT>
+bool operator <=(const WinHandle<T, NullValue, RT>& lhs, const T& rhs) noexcept
+{
+	return lhs.get() <= rhs;
+}
+
+template<typename T, T NullValue, typename RT>
+bool operator >(const T& lhs, const WinHandle<T, NullValue, RT>& rhs) noexcept
 {
 	return lhs > rhs.get();
 }
 
+template<typename T, T NullValue, typename RT>
+bool operator >(const WinHandle<T, NullValue, RT>& lhs, const T& rhs) noexcept
+{
+	return lhs.get() > rhs;
+}
 
+template<typename T, T NullValue, typename RT>
+bool operator >=(const T& lhs, const WinHandle<T, NullValue, RT>& rhs) noexcept
+{
+	return lhs >= rhs.get();
+}
+
+template<typename T, T NullValue, typename RT>
+bool operator >=(const WinHandle<T, NullValue, RT>& lhs, const T& rhs) noexcept
+{
+	return lhs.get() >= rhs;
+}
+
+#else !__cpp_impl_three_way_comparison
+
+template<typename T, T NullValue, typename RT>
+std::strong_ordering operator <=>(const T& lhs, const WinHandle<T, NullValue, RT>& rhs) noexcept
+{
+	return std::compare_three_way{}(lhs, rhs.get());
+}
+
+template<typename T, T NullValue, typename RT>
+std::strong_ordering operator <=>(const WinHandle<T, NullValue, RT>& lhs, const T& rhs) noexcept
+{
+	return std::compare_three_way{}(lhs.get(), rhs);
+}
+
+#endif !__cpp_impl_three_way_comparison
+
+#pragma endregion
+
+#pragma endregion
+
+#pragma region WinHandle implementation
 //////////////////////////////////////////////////////////////////////////
 // WinHandle implementation
 
+#pragma region Constructors
 // Constructors
 
-template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>::WinHandle()
+template<typename T, T NullValue, typename RT>
+WinHandle<T, NullValue, RT>::WinHandle()
 	: m_impl{ std::make_shared<impl>(NullValue, nullptr) }
 {
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>::WinHandle(Type handle, nullptr_t)
+template<typename T, T NullValue, typename RT>
+WinHandle<T, NullValue, RT>::WinHandle(T handle, nullptr_t)
 	: m_impl{ std::make_shared<impl>(handle, nullptr) }
 {
 }
 
 // std::function
-template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>::WinHandle(std::function<ReturnType(Type)> deleter)
+template<typename T, T NullValue, typename RT>
+WinHandle<T, NullValue, RT>::WinHandle(std::function<RT(T)> deleter)
 	: m_impl{ std::make_shared<impl>(NullValue, deleter) }
 {
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>::WinHandle(Type handle, std::function<ReturnType(Type)> deleter)
+template<typename T, T NullValue, typename RT>
+WinHandle<T, NullValue, RT>::WinHandle(T handle, std::function<RT(T)> deleter)
 	: m_impl{ std::make_shared<impl>(handle, deleter) }
 {
 }
 
 // Function pointer
-template<typename Type, Type NullValue, typename ReturnType>
+template<typename T, T NullValue, typename RT>
 template<typename DType>
-WinHandle<Type, NullValue, ReturnType>::WinHandle(ReturnType(__stdcall* deleter)(DType))
+WinHandle<T, NullValue, RT>::WinHandle(RT(__stdcall* deleter)(DType))
 	: m_impl{ std::make_shared<impl>(NullValue, std::bind(deleter, std::placeholders::_1)) }
 {
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
+template<typename T, T NullValue, typename RT>
 template<typename DType, typename... Args>
-WinHandle<Type, NullValue, ReturnType>::WinHandle(ReturnType(__stdcall* deleter)(DType, Args...), Args&&... args)
+WinHandle<T, NullValue, RT>::WinHandle(RT(__stdcall* deleter)(DType, Args...), Args&&... args)
 	: m_impl{ std::make_shared<impl>(NullValue, std::bind(deleter, std::placeholders::_1, std::forward<Args>(args)...)) }
 {
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
+template<typename T, T NullValue, typename RT>
 template<typename DType>
-WinHandle<Type, NullValue, ReturnType>::WinHandle(Type handle, ReturnType(__stdcall* deleter)(DType))
+WinHandle<T, NullValue, RT>::WinHandle(T handle, RT(__stdcall* deleter)(DType))
 	: m_impl{ std::make_shared<impl>(handle, std::bind(deleter, std::placeholders::_1)) }
 {
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
+template<typename T, T NullValue, typename RT>
 template<typename DType, typename... Args>
-WinHandle<Type, NullValue, ReturnType>::WinHandle(Type handle, ReturnType(__stdcall* deleter)(DType, Args...), Args&&... args)
+WinHandle<T, NullValue, RT>::WinHandle(T handle, RT(__stdcall* deleter)(DType, Args...), Args&&... args)
 	: m_impl{ std::make_shared<impl>(handle, std::bind(deleter, std::placeholders::_1, std::forward<Args>(args)...)) }
 {
 }
 
 // Member function pointer
-template<typename Type, Type NullValue, typename ReturnType>
+template<typename T, T NullValue, typename RT>
 template<typename Class, typename DType>
-WinHandle<Type, NullValue, ReturnType>::WinHandle(ReturnType(__stdcall Class::* deleter)(DType), Class* instance)
+WinHandle<T, NullValue, RT>::WinHandle(RT(__stdcall Class::* deleter)(DType), Class* instance)
 	: m_impl{ std::make_shared<impl>(NullValue, std::bind(deleter, instance, std::placeholders::_1)) }
 {
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
+template<typename T, T NullValue, typename RT>
 template<typename Class, typename DType, typename... Args>
-WinHandle<Type, NullValue, ReturnType>::WinHandle(ReturnType(__stdcall Class::* deleter)(DType, Args...), Class* instance, Args&&... args)
+WinHandle<T, NullValue, RT>::WinHandle(RT(__stdcall Class::* deleter)(DType, Args...), Class* instance, Args&&... args)
 	: m_impl{ std::make_shared<impl>(NullValue, std::bind(deleter, instance, std::placeholders::_1, std::forward<Args>(args)...)) }
 {
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
+template<typename T, T NullValue, typename RT>
 template<typename Class, typename DType>
-WinHandle<Type, NullValue, ReturnType>::WinHandle(Type handle, ReturnType(__stdcall Class::* deleter)(DType), Class* instance)
+WinHandle<T, NullValue, RT>::WinHandle(T handle, RT(__stdcall Class::* deleter)(DType), Class* instance)
 	: m_impl{ std::make_shared<impl>(handle, std::bind(deleter, instance, std::placeholders::_1)) }
 {
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
+template<typename T, T NullValue, typename RT>
 template<typename Class, typename DType, typename... Args>
-WinHandle<Type, NullValue, ReturnType>::WinHandle(Type handle, ReturnType(__stdcall Class::* deleter)(DType, Args...), Class* instance, Args&&... args)
+WinHandle<T, NullValue, RT>::WinHandle(T handle, RT(__stdcall Class::* deleter)(DType, Args...), Class* instance, Args&&... args)
 	: m_impl{ std::make_shared<impl>(handle, std::bind(deleter, instance, std::placeholders::_1, std::forward<Args>(args)...)) }
 {
 }
 
-// Copy and move constructors
+#pragma endregion
 
-template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>::WinHandle(WinHandle&& move) noexcept
+#pragma region Copy and move constructors
+// Copy and move constructors
+template<typename T, T NullValue, typename RT>
+WinHandle<T, NullValue, RT>::WinHandle(WinHandle&& move) noexcept
 	: m_impl(move.m_impl)
 {
 	std::make_shared<impl>(NullValue, m_impl->deleter()).swap(move.m_impl);
 }
 
+#pragma endregion
+
+#pragma region Copy and move assignment operators
 // Copy and move assignment operators
 
-template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>& WinHandle<Type, NullValue, ReturnType>::operator =(WinHandle&& move) noexcept
+template<typename T, T NullValue, typename RT>
+WinHandle<T, NullValue, RT>& WinHandle<T, NullValue, RT>::operator =(WinHandle&& move) noexcept
 {
 	m_impl = move.m_impl;
 	std::make_shared<impl>(NullValue, m_impl->deleter()).swap(move.m_impl);
 	return *this;
 }
 
-// Comparison operators
+#pragma endregion
 
-template<typename Type, Type NullValue, typename ReturnType>
-bool WinHandle<Type, NullValue, ReturnType>::operator==(const WinHandle& other) const noexcept
-{
-	return m_impl == other.m_impl;
-}
-
-#if __cpp_impl_three_way_comparison
-
-template<typename Type, Type NullValue, typename ReturnType>
-std::strong_ordering WinHandle<Type, NullValue, ReturnType>::operator<=>(const WinHandle& other) noexcept
-{
-	return m_impl <=> other.m_impl;
-}
-
-#else
-
-template<typename Type, Type NullValue, typename ReturnType>
-bool WinHandle<Type, NullValue, ReturnType>::operator!() const noexcept
-{
-	return !valid();
-}
-
-template<typename Type, Type NullValue, typename ReturnType>
-bool WinHandle<Type, NullValue, ReturnType>::operator <(const WinHandle& other) const noexcept
-{
-	return m_impl < other.m_impl;
-}
-
-#endif __cpp_impl_three_way_comparison
-
-template<typename Type, Type NullValue, typename ReturnType>
-bool WinHandle<Type, NullValue, ReturnType>::operator==(const Type& handle) const noexcept
-{
-	return get() == handle;
-}
-
-template<typename Type, Type NullValue, typename ReturnType>
-bool WinHandle<Type, NullValue, ReturnType>::operator!=(const Type& handle) const noexcept
-{
-	return get() != handle;
-}
-
-template<typename Type, Type NullValue, typename ReturnType>
-bool WinHandle<Type, NullValue, ReturnType>::operator<(const Type& handle) const noexcept
-{
-	return get() < handle;
-}
-
-template<typename Type, Type NullValue, typename ReturnType>
-bool WinHandle<Type, NullValue, ReturnType>::operator>(const Type& handle) const noexcept
-{
-	return get() > handle;
-}
-
+#pragma region Assignment operators
 // Assignment operators
 
-template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>& WinHandle<Type, NullValue, ReturnType>::operator=(Type handle) noexcept
+template<typename T, T NullValue, typename RT>
+WinHandle<T, NullValue, RT>& WinHandle<T, NullValue, RT>::operator=(const T& handle) noexcept
 {
 	m_impl->assign(handle);
 	return *this;
 }
 
+#pragma endregion
+
+#pragma region Conversion operators
 // Conversion operators
 
-template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>::operator bool_type() const noexcept
+template<typename T, T NullValue, typename RT>
+WinHandle<T, NullValue, RT>::operator bool_type() const noexcept
 {
 	return valid() ? &WinHandle::this_type_does_not_support_comparisons : nullptr;
 }
 
+#pragma endregion
+
+#pragma region Smart pointer operations
 // Smart pointer operations
 
-template<typename Type, Type NullValue, typename ReturnType>
-void WinHandle<Type, NullValue, ReturnType>::swap(WinHandle& other) noexcept
+template<typename T, T NullValue, typename RT>
+void WinHandle<T, NullValue, RT>::swap(WinHandle& other) noexcept
 {
 	m_impl.swap(other.m_impl);
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
-void WinHandle<Type, NullValue, ReturnType>::reset()
+template<typename T, T NullValue, typename RT>
+void WinHandle<T, NullValue, RT>::reset()
 {
 	std::make_shared<impl>(NullValue, m_impl->deleter()).swap(m_impl);
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
-void WinHandle<Type, NullValue, ReturnType>::reset(Type handle)
+template<typename T, T NullValue, typename RT>
+void WinHandle<T, NullValue, RT>::reset(T handle)
 {
 	if (handle != m_impl->get())
 		std::make_shared<impl>(handle, m_impl->deleter()).swap(m_impl);
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
-long WinHandle<Type, NullValue, ReturnType>::use_count() const noexcept
+template<typename T, T NullValue, typename RT>
+long WinHandle<T, NullValue, RT>::use_count() const noexcept
 {
 	return m_impl.use_count();
 }
 
+#pragma endregion
+
+#pragma region Handle operations
 // Handle operations
 
-template<typename Type, Type NullValue, typename ReturnType>
-bool WinHandle<Type, NullValue, ReturnType>::valid() const noexcept
+template<typename T, T NullValue, typename RT>
+bool WinHandle<T, NullValue, RT>::valid() const noexcept
 {
 	return m_impl->get() != NullValue;
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
-Type WinHandle<Type, NullValue, ReturnType>::get() const noexcept
+template<typename T, T NullValue, typename RT>
+T WinHandle<T, NullValue, RT>::get() const noexcept
 {
 	return m_impl->get();
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
-const Type* WinHandle<Type, NullValue, ReturnType>::ptr() const noexcept
+template<typename T, T NullValue, typename RT>
+const T* WinHandle<T, NullValue, RT>::ptr() const noexcept
 {
 	return m_impl->ptr();
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
-typename WinHandle<Type, NullValue, ReturnType>::MutableHandle WinHandle<Type, NullValue, ReturnType>::ptr() noexcept
+template<typename T, T NullValue, typename RT>
+typename WinHandle<T, NullValue, RT>::MutableHandle WinHandle<T, NullValue, RT>::ptr() noexcept
 {
 	return MutableHandle(*this);
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
-ReturnType WinHandle<Type, NullValue, ReturnType>::close() noexcept
+template<typename T, T NullValue, typename RT>
+RT WinHandle<T, NullValue, RT>::close() noexcept
 {
 	return m_impl->assign(NullValue);
 }
 
+#pragma endregion
 
+#pragma endregion
+
+#pragma region WinHandle::impl implementation
 //////////////////////////////////////////////////////////////////////////
 // WinHandle::impl implementation
 
+#pragma region Constructors
 // Constructors
 
-template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>::impl::impl(Type handle, nullptr_t) noexcept
+template<typename T, T NullValue, typename RT>
+WinHandle<T, NullValue, RT>::impl::impl(T handle, nullptr_t) noexcept
 	: m_handle{ handle }
 {
 }
 
 // std::function
-template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>::impl::impl(Type handle, std::function<ReturnType(Type)> deleter)
+template<typename T, T NullValue, typename RT>
+WinHandle<T, NullValue, RT>::impl::impl(T handle, std::function<RT(T)> deleter)
 	: m_handle{ handle }, m_deleter{ deleter }
 {
 }
 
+#pragma endregion
+
+#pragma region Destructor
 // Destructor
 
-template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>::impl::~impl() noexcept
+template<typename T, T NullValue, typename RT>
+WinHandle<T, NullValue, RT>::impl::~impl() noexcept
 {
 	destroy();
 }
 
+#pragma endregion
+
+#pragma region Assignment
 // Assignment
 
-template<typename Type, Type NullValue, typename ReturnType>
-ReturnType WinHandle<Type, NullValue, ReturnType>::impl::assign(Type v) noexcept
+template<typename T, T NullValue, typename RT>
+RT WinHandle<T, NullValue, RT>::impl::assign(T v) noexcept
 {
-	ReturnType result = {};
+	RT result = {};
 	if (v != m_handle)
 	{
 		result = destroy();
@@ -483,32 +680,38 @@ ReturnType WinHandle<Type, NullValue, ReturnType>::impl::assign(Type v) noexcept
 	return result;
 }
 
+#pragma endregion
+
+#pragma region Member access
 // Member access
 
-template<typename Type, Type NullValue, typename ReturnType>
-Type WinHandle<Type, NullValue, ReturnType>::impl::get() const noexcept
+template<typename T, T NullValue, typename RT>
+T WinHandle<T, NullValue, RT>::impl::get() const noexcept
 {
 	return m_handle;
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
-const Type* WinHandle<Type, NullValue, ReturnType>::impl::ptr() const noexcept
+template<typename T, T NullValue, typename RT>
+const T* WinHandle<T, NullValue, RT>::impl::ptr() const noexcept
 {
 	return &m_handle;
 }
 
-template<typename Type, Type NullValue, typename ReturnType>
-std::function<ReturnType(Type)> WinHandle<Type, NullValue, ReturnType>::impl::deleter() const noexcept
+template<typename T, T NullValue, typename RT>
+std::function<RT(T)> WinHandle<T, NullValue, RT>::impl::deleter() const noexcept
 {
 	return m_deleter;
 }
 
+#pragma endregion
+
+#pragma region Deleter
 // Deleter
 
-template<typename Type, Type NullValue, typename ReturnType>
-ReturnType WinHandle<Type, NullValue, ReturnType>::impl::destroy() noexcept
+template<typename T, T NullValue, typename RT>
+RT WinHandle<T, NullValue, RT>::impl::destroy() noexcept
 {
-	ReturnType result = {};
+	RT result = {};
 	if (m_handle != NullValue)
 	{
 		if (m_deleter)
@@ -518,29 +721,43 @@ ReturnType WinHandle<Type, NullValue, ReturnType>::impl::destroy() noexcept
 	return result;
 }
 
+#pragma endregion
+#pragma endregion
+
+#pragma region MutableHandle implementation
 
 //////////////////////////////////////////////////////////////////////////
 // MutableHandle implementation
 
+#pragma region Constructor
 // Constructor
-
-template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>::MutableHandle::MutableHandle(WinHandle& owner) noexcept
+template<typename T, T NullValue, typename RT>
+WinHandle<T, NullValue, RT>::MutableHandle::MutableHandle(WinHandle& owner) noexcept
 	: m_owner(owner), m_handle(owner.get())
 {
 }
 
+#pragma endregion
+
+#pragma region Destructor
 // Destructor
-template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>::MutableHandle::~MutableHandle() noexcept
+template<typename T, T NullValue, typename RT>
+WinHandle<T, NullValue, RT>::MutableHandle::~MutableHandle() noexcept
 {
 	m_owner.reset(m_handle);
 	m_handle = NullValue;
 }
 
+#pragma endregion
+
+#pragma region Conversion operator
 // Conversion operator
-template<typename Type, Type NullValue, typename ReturnType>
-WinHandle<Type, NullValue, ReturnType>::MutableHandle::operator Type* () noexcept
+template<typename T, T NullValue, typename RT>
+WinHandle<T, NullValue, RT>::MutableHandle::operator T*() noexcept
 {
 	return &m_handle;
 }
+
+#pragma endregion
+
+#pragma endregion

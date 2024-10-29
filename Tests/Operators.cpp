@@ -1,9 +1,9 @@
 #include "pch.h"
 #include "CppUnitTest.h"
 #include <WinHandle.h>
+#include <map>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
-
 
 namespace Operators
 {
@@ -12,13 +12,14 @@ namespace Operators
 	private:
 		inline static const HANDLE Handle1 = reinterpret_cast<HANDLE>(1234);
 		inline static const HANDLE Handle2 = reinterpret_cast<HANDLE>(1234);
-		inline static const HANDLE NullHandle = reinterpret_cast<HANDLE>(-1);
+		inline static const HANDLE NullHandle = INVALID_HANDLE_VALUE;
 
 		using handle_type = std::remove_cv_t<decltype(Handle1)>;
+		using winhandle_type = WinHandle<handle_type, INVALID_HANDLE_VALUE>;
 
 		TEST_METHOD(OperatorBool)
 		{
-			WinHandle<handle_type, NullHandle> h1{ NullHandle, nullptr };
+			winhandle_type h1{ NullHandle, nullptr };
 			if (h1)
 				Assert::Fail();
 
@@ -28,7 +29,7 @@ namespace Operators
 
 		TEST_METHOD(OperatorNot)
 		{
-			WinHandle<handle_type, NullHandle> h1{ NullHandle, nullptr };
+			winhandle_type h1{ NullHandle, nullptr };
 
 			// Check if null
 			Assert::IsTrue(!h1);
@@ -36,41 +37,41 @@ namespace Operators
 
 		TEST_METHOD(BoolAssignment)
 		{
-			WinHandle<handle_type, NullHandle> h1{ NullHandle, nullptr };
+			winhandle_type h1{ NullHandle, nullptr };
 			bool valid = h1;
 			Assert::IsFalse(valid);
 		}
 
-		bool IsValid(const WinHandle<handle_type, NullHandle>& h)
+		bool IsValid(const winhandle_type& h)
 		{
 			return h;
 		}
 
 		TEST_METHOD(ReturnBool)
 		{
-			WinHandle<handle_type, NullHandle> h1{ NullHandle, nullptr };
+			winhandle_type h1{ NullHandle, nullptr };
 			bool valid = IsValid(h1);
 			Assert::IsFalse(valid);
 		}
 
-		WinHandle<handle_type, NullHandle> getWinHandle(const WinHandle<handle_type, NullHandle>& h)
+		winhandle_type getWinHandle(const winhandle_type& h)
 		{
 			return h;
 		}
 
 		TEST_METHOD(ReturnWinHandle)
 		{
-			WinHandle<handle_type, NullHandle> h1{ Handle1, nullptr };
-			WinHandle<handle_type, NullHandle> h2 = getWinHandle(h1);
+			winhandle_type h1{ Handle1, nullptr };
+			winhandle_type h2 = getWinHandle(h1);
 
 			Assert::AreEqual(2l, h1.use_count());
 		}
 
 		TEST_METHOD(OperatorEqual)
 		{
-			WinHandle<handle_type, NullHandle> h1{ NullHandle, nullptr };
-			WinHandle< handle_type, NullHandle> h2 = h1;
-			WinHandle<handle_type, NullHandle> h3{ NullHandle, nullptr };
+			winhandle_type h1{ NullHandle, nullptr };
+			winhandle_type h2 = h1;
+			winhandle_type h3{ Handle1, nullptr };
 
 			// Check if equal
 			Assert::IsTrue(h2 == h1);
@@ -82,17 +83,48 @@ namespace Operators
 
 		TEST_METHOD(OperatorNotEqual)
 		{
-			WinHandle<handle_type, NullHandle> h1{ NullHandle, nullptr };
-			WinHandle<handle_type, NullHandle> h2{ NullHandle, nullptr };
+			winhandle_type h1{ NullHandle, nullptr };
+			winhandle_type h2{ Handle1, nullptr };
 
-			// Check if equal
+			// Check if not equal
 			Assert::IsTrue(h2 != h1);
 			Assert::IsTrue(h1 != h2);
 		}
 
+		TEST_METHOD(OperatorLess)
+		{
+			winhandle_type h1{ NullHandle, nullptr };
+			winhandle_type h2{ Handle1, nullptr };
+
+			// Check if less
+			Assert::IsFalse(h1 < h2);
+			Assert::IsTrue(h2 < h1);
+		}
+
+		TEST_METHOD(OperatorLess2)
+		{
+			std::map<winhandle_type, bool> test;
+			winhandle_type h1{ Handle1, nullptr };
+			winhandle_type h2{ Handle2, nullptr };
+
+			test.insert(std::make_pair(h1, true));
+			test.insert(std::make_pair(h2, false));
+		}
+
+		TEST_METHOD(OperatorGreater)
+		{
+			winhandle_type h1{ NullHandle, nullptr };
+			winhandle_type h2{ Handle1, nullptr };
+
+			// Check if greater
+			Assert::IsTrue(h1 > h2);
+			Assert::IsFalse(h2 > h1);
+		}
+
 		TEST_METHOD(OperatorHandleEqual)
 		{
-			WinHandle<handle_type, NullHandle> h1{ NullHandle, nullptr };
+			winhandle_type h1{ NullHandle, nullptr };
+
 			// Check if equal
 			Assert::IsTrue(NullHandle == h1);
 			Assert::IsTrue(h1 == NullHandle);
@@ -100,39 +132,59 @@ namespace Operators
 
 		TEST_METHOD(OperatorHandleNotEqual)
 		{
-			WinHandle<handle_type, NullHandle> h1{ NullHandle, nullptr };
+			winhandle_type h1{ NullHandle, nullptr };
+			winhandle_type h2{ Handle1, nullptr };
 		
 			// Check if not equal
 			Assert::IsFalse(NullHandle != h1);
 			Assert::IsFalse(h1 != NullHandle);
+
+			Assert::IsTrue(NullHandle != h2);
+			Assert::IsTrue(h2 != NullHandle);
 		}
 
-		TEST_METHOD(OperatorLess)
+		TEST_METHOD(OperatorHandleLess)
 		{
-			WinHandle<handle_type, NullHandle> h1{ NullHandle, nullptr };
+			winhandle_type h1{ NullHandle, nullptr };
 
 			// Check if less
 			Assert::IsFalse(NullHandle < h1);
 			Assert::IsFalse(h1 < NullHandle);
 		}
 
-		TEST_METHOD(OperatorGreater)
+		TEST_METHOD(OperatorHandleGreater)
 		{
-			WinHandle<handle_type, NullHandle> h1{ NullHandle, nullptr };
+			winhandle_type h1{ NullHandle, nullptr };
 
 			// Check if less
 			Assert::IsFalse(NullHandle > h1);
 			Assert::IsFalse(h1 > NullHandle);
 		}
 
+		TEST_METHOD(OperatorNullEqual)
+		{
+			winhandle_type h1{ NullHandle, nullptr };
+			winhandle_type h2{ Handle1, nullptr };
+			winhandle_type h3{ static_cast<handle_type>(0), nullptr };
+
+			Assert::IsTrue(h1 == nullptr);
+			Assert::IsTrue(nullptr == h1);
+
+			Assert::IsFalse(h2 == nullptr);
+			Assert::IsFalse(nullptr == h2);
+
+			Assert::IsFalse(h3 == nullptr);
+			Assert::IsFalse(nullptr == h3);
+		}
+
 		TEST_METHOD(IfCreate)
 		{
-			if (WinHandle<handle_type, NullHandle> h1{ NullHandle, nullptr })
+			if (winhandle_type h1{ NullHandle, nullptr })
 			{
 				Assert::Fail();
 			}
 
-			if (WinHandle<handle_type, NullHandle> h2{ Handle1, nullptr })
+			if (winhandle_type h2{ Handle1, nullptr })
 			{
 				Assert::IsTrue(h2.valid());
 			}
@@ -140,15 +192,15 @@ namespace Operators
 
 		TEST_METHOD(IfAssign)
 		{
-			WinHandle<handle_type, NullHandle> h1{ NullHandle, nullptr };
-			if (WinHandle<handle_type, NullHandle> h = h1)
+			winhandle_type h1{ NullHandle, nullptr };
+			if (winhandle_type h = h1)
 			{
 				Assert::Fail();
 			}
 
 
-			WinHandle<handle_type, NullHandle> h2{ Handle1, nullptr };
-			if (WinHandle<handle_type, NullHandle> h = h2)
+			winhandle_type h2{ Handle1, nullptr };
+			if (winhandle_type h = h2)
 			{
 				Assert::IsTrue(h.valid());
 			}
